@@ -9,7 +9,7 @@ df.columns = df.columns.str.strip().str.lower()
 df['month'] = pd.to_datetime(df['month'])
 df['year'] = df['month'].dt.year
 
-# Filter to burglary only
+# burglary only
 burglary_df = df[df['crime type'].str.lower() == 'burglary']
 """
 # total burglaries/year
