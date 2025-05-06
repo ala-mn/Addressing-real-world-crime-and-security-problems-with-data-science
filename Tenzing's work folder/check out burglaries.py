@@ -49,9 +49,8 @@ print("Saved monthly pattern chart to burglary_monthly_pattern_by_year.png")
 #downloaded everything in LB_shp from https://data.london.gov.uk/dataset/statistical-gis-boundary-files-london
 
 
-# Load LSOA shapefile (all components must be in the same folder)
-# === Step 1: Load all shapefiles into one GeoDataFrame ===
-shapefile_dir = '/data/london_lsoa_shapefiles/'  # Folder containing all .shp files (one per borough)
+# get all shape files into 1
+shapefile_dir = r"C:\Users\mgshe\PycharmProjects\Addressing-real-world-crime-and-security-problems-with-data-science\Tenzing's work folder\LB_shp" # all .shp files
 all_shapes = []
 
 for file in os.listdir(shapefile_dir):
@@ -61,22 +60,22 @@ for file in os.listdir(shapefile_dir):
         gdf.columns = gdf.columns.str.strip().str.lower()  # Normalize column names
         all_shapes.append(gdf)
 
-# Combine all boroughs into one GeoDataFrame
+# combining all boroughs into one GeoDataFrame
 lsoa_map = pd.concat(all_shapes, ignore_index=True)
 lsoa_map = gpd.GeoDataFrame(lsoa_map, geometry='geometry')
 
-# Define merge keys
+# define merge keys
 lsoa_column = 'lsoa code'   # from burglary data
 map_column = 'lsoa21cd'     # from shapefile
 
-# Group burglary counts by year and LSOA
+# group burglary counts by year and LSOA
 burglary_grouped = burglary_df.groupby(['year', lsoa_column]).size().reset_index(name='count')
 
-# Output directory for heatmaps
+# output directory
 output_dir = r"C:\Users\mgshe\PycharmProjects\Addressing-real-world-crime-and-security-problems-with-data-science\Tenzing's work folder\heatmaps"
 os.makedirs(output_dir, exist_ok=True)
 
-# Generate yearly heatmaps
+# make yearly heatmaps
 for year in sorted(burglary_grouped['year'].unique()):
     print(f"Generating heatmap for {year}...")
 
