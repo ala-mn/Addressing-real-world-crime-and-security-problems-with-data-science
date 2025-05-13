@@ -90,6 +90,8 @@ print(classification_report(y_test_binary, y_pred_binary))
 accuracy = accuracy_score(y_test_binary, y_pred_binary)
 """
 accuracy = accuracy_score(y_test, y_pred_rounded)
+print(classification_report(y_test, y_pred_rounded))
+
 print(f"Accuracy: {accuracy:.4f}")
 
 
