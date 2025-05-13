@@ -27,7 +27,7 @@ base_dir = r'C:\Users\mgshe\PycharmProjects\Addressing-real-world-crime-and-secu
 # Filters
 jurisdiction = 'metropolitan'
 datasets = {'outcomes', 'stop-and-search', 'street'}
-datasets = {'street'}
+datasets = {'stop-and-search'}
 
 # combine me up here
 all_dfs = []
@@ -53,7 +53,7 @@ for root, dirs, files in os.walk(base_dir):
 # combine and gimme 1 file I can work with
 if all_dfs:
     combined_df = pd.concat(all_dfs, ignore_index=True)
-    output_path = r'combined_streets_data.csv'
+    output_path = r'combined_S&S_data.csv'
     combined_df.to_csv(output_path, index=False)
     print(f'Combined data saved to {output_path}')
 else:
