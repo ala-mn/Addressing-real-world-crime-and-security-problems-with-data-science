@@ -1,4 +1,4 @@
-import matplotlib.pyplot as plt
+#import matplotlib.pyplot as plt
 import pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import r2_score, mean_squared_error, accuracy_score, classification_report
@@ -11,6 +11,10 @@ df_street['year_month'] = df_street['Month'].dt.to_period('M')
 
 # useful for later
 lsoa_lookup = df_street[['Latitude', 'Longitude', 'LSOA name']].drop_duplicates()
+
+
+# Build lookup from original street data
+lsoa_code_name_lookup = df_street[['LSOA name', 'LSOA code']].drop_duplicates()
 
 # burglary flag
 df_street['is_burglary'] = (df_street['Crime type'].str.lower() == 'burglary').astype(int)
@@ -38,8 +42,7 @@ df_stopsearch_lsoa = pd.merge(
 stopsearch_agg_lsoa = df_stopsearch_lsoa.groupby(['LSOA name', 'year_month']).size().reset_index(name='stop_search_count')
 
 
-
-#merge this bitch
+# Merge burglary and stop & search data into one main df
 combined_df = pd.merge(
     burglary_agg,
     stopsearch_agg_lsoa,
@@ -65,8 +68,17 @@ new_data_df = new_data_df[new_data_df['crime_type'].str.lower() == 'burglary']
 # Merge engineered features into combined_df
 combined_df = pd.merge(
     combined_df,
+    lsoa_code_name_lookup,
+    on='LSOA name',
+    how='left'
+)
+
+# 4. Now merge with lag/IMD/population features
+combined_df = pd.merge(
+    combined_df,
     new_data_df,
-    on=['lsoa_code', 'year_month'],
+    left_on=['LSOA code', 'year_month'],
+    right_on=['lsoa_code', 'month'],
     how='left'
 )
 
@@ -137,10 +149,11 @@ print(f"Accuracy: {accuracy:.4f}")
 
 
 
-
+"""
 plt.scatter(y_test, y_pred_rounded, alpha=0.5)
 plt.xlabel('Actual Burglaries')
 plt.ylabel('Predicted Burglaries')
 plt.title('Actual vs Predicted Burglary Counts')
 plt.show()
 plt.savefig("actual vs predicted burglary counts.png")
+"""
