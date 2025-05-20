@@ -2,16 +2,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import geopandas as gpd
 import os
-
+"""
 # load that data
-df = pd.read_csv(r'C:\Users\mgshe\PycharmProjects\Addressing-real-world-crime-and-security-problems-with-data-science\combined_streets_data.csv', low_memory=False)
+df = pd.read_csv(r'C:Users\mgshe\PycharmProjects\Addressing-real-world-crime-and-security-problems-with-data-science\combined_streets_data.csv', low_memory=False)
 df.columns = df.columns.str.strip().str.lower()
 df['month'] = pd.to_datetime(df['month'])
 df['year'] = df['month'].dt.year
 
 # burglary only
 burglary_df = df[df['crime type'].str.lower() == 'burglary']
-"""
+
 # total burglaries/year
 burglary_by_year = burglary_df.groupby('Year').size()
 print("Total burglaries per year:")
@@ -49,59 +49,51 @@ print("Saved monthly pattern chart to burglary_monthly_pattern_by_year.png")
 #downloaded everything in LB_shp from https://data.london.gov.uk/dataset/statistical-gis-boundary-files-london
 
 
+df = pd.read_csv(r"C:\Users\mgshe\PycharmProjects\Addressing-real-world-crime-and-security-problems-with-data-science\Tenzing's work folder\results.csv", low_memory=False)
+
+
 # get all shape files into 1
-shapefile_dir = r"C:\Users\mgshe\PycharmProjects\Addressing-real-world-crime-and-security-problems-with-data-science\Tenzing's work folder\LB_shp" # all .shp files
+ward_shp_dir = r"C:\Users\mgshe\PycharmProjects\Addressing-real-world-crime-and-security-problems-with-data-science\Tenzing's work folder\LB_shp" # all .shp files
 all_shapes = []
 
-for file in os.listdir(shapefile_dir):
-    if file.endswith('.shp'):
-        path = os.path.join(shapefile_dir, file)
-        gdf = gpd.read_file(path)
-        gdf.columns = gdf.columns.str.strip().str.lower()  # Normalize column names
-        all_shapes.append(gdf)
 
-# combining all boroughs into one GeoDataFrame
-lsoa_map = pd.concat(all_shapes, ignore_index=True)
-lsoa_map = gpd.GeoDataFrame(lsoa_map, geometry='geometry')
 
-# define merge keys
-lsoa_column = 'lsoa code'   # from burglary data
-map_column = 'lsoa21cd'     # from shapefile
+# this took waaaay too long to figure out
+shapefiles = [os.path.join(ward_shp_dir, f) for f in os.listdir(ward_shp_dir) if f.endswith('.shp')]
 
-# group burglary counts by year and LSOA
-burglary_grouped = burglary_df.groupby(['year', lsoa_column]).size().reset_index(name='count')
+# merge all shapefiles into one geodatframe
+lsoa_map = gpd.GeoDataFrame(pd.concat([gpd.read_file(shp) for shp in shapefiles], ignore_index=True))
 
-# output directory
-output_dir = r"C:\Users\mgshe\PycharmProjects\Addressing-real-world-crime-and-security-problems-with-data-science\Tenzing's work folder\heatmaps"
-os.makedirs(output_dir, exist_ok=True)
+# doublecheck
+print(lsoa_map.columns)
+print(lsoa_map.head())
 
-# make yearly heatmaps
-for year in sorted(burglary_grouped['year'].unique()):
-    print(f"Generating heatmap for {year}...")
+lsoa_map.columns = lsoa_map.columns.str.strip().str.lower()
 
-    yearly_data = burglary_grouped[burglary_grouped['year'] == year]
+# predidtciot time
 
-    # Confirm merge columns exist
-    if lsoa_column not in yearly_data.columns:
-        print(f"Error: '{lsoa_column}' column not found in yearly_data for {year}")
-        continue
+df = df[['LSOA name', 'predicted_burglaries']]
+df = df.rename(columns={'lsoa name': 'lsoa21nm'})
+df.columns = ['lsoa21nm', 'predicted_burglaries']  # update name if needed
+merged = lsoa_map.merge(df, on='lsoa21nm', how='left')
+merged['predicted_burglaries'] = merged['predicted_burglaries'].fillna(0)
 
-    # Merge
-    merged = lsoa_map.merge(yearly_data, how='left', left_on=map_column, right_on=lsoa_column)
-    merged['count'] = merged['count'].fillna(0)
+#plot em bitch
+fig, ax = plt.subplots(figsize=(12, 12))
 
-    # Plot
-    ax = merged.plot(column='count',
-                     cmap='Reds',
-                     linewidth=0.1,
-                     edgecolor='gray',
-                     figsize=(10, 10),
-                     legend=True,
-                     legend_kwds={'label': "Burglaries", 'orientation': "vertical"})
+merged.plot(
+    column='predicted_burglaries',
+    cmap='OrRd',
+    linewidth=0.2,
+    edgecolor='black',
+    legend=True,
+    ax=ax,
+    legend_kwds={'label': "Predicted Burglaries", 'orientation': "vertical"}
+)
 
-    ax.set_title(f'Burglaries per LSOA - {year}', fontsize=14)
-    ax.axis('off')
+ax.set_title('Predicted Burglaries per LSOA', fontsize=16)
+ax.axis('off')
 
-    plt.tight_layout()
-    plt.savefig(f'{output_dir}/burglary_heatmap_{year}.png', dpi=300)
-    plt.close()
+plt.tight_layout()
+plt.show()
+fig.savefig(r'C:\Path\To\predicted_burglaries_map.png', dpi=300)
